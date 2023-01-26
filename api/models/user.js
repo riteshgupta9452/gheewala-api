@@ -2,11 +2,10 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
     name: String,
-    city: String,
     phone_number: String,
     user_type: {
         type: String,
-        enum: ["B2B", "B2C"],
+        enum: ["b2b", "b2c"],
     },
     firm_name: String,
     shop_unit: String,
