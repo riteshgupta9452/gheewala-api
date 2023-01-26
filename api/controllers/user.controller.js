@@ -23,6 +23,12 @@ module.exports.generateOtp = async (req, res) => {
         });
     }
 
+    if (!user.verified) {
+        return res.status(400).json({
+            err: "User not verified"
+        });
+    }
+
     const otp = util.generateTestOtp();
     user.otp_verified = false;
     user.otp = otp;
