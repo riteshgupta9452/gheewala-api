@@ -71,3 +71,18 @@ module.exports.verifyOtp = async (req, res) => {
             success: false,
         });
 };
+
+module.exports.getUser = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    return res.json({
+        user: user,
+        success: true,
+    });
+};

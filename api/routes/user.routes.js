@@ -2,12 +2,9 @@ const express = require("express");
 const router = express.Router();
 
 const userController = require('../controllers/user.controller');
+const middleware = require('../functions/middleware');
 
-router.get('/', (req, res) => {
-    res.json({
-        mesaage: "User Route" 
-    });
-});
+router.get('/', middleware.tokenVerify, userController.getUser);
 
 router.post('/register/:userType', userController.createUser);
 router.get('/generate-otp/:user_id', userController.generateOtp);
