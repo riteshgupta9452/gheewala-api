@@ -10,5 +10,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/register/:userType', userController.createUser);
+router.get('/generate-otp/:user_id', userController.generateOtp);
+
 
 module.exports = router;
