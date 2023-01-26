@@ -24,6 +24,7 @@ module.exports.generateOtp = async (req, res) => {
     }
 
     const otp = util.generateTestOtp();
+    user.otp_verified = false;
     user.otp = otp;
 
     user.save((err, user) => {
