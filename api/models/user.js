@@ -22,7 +22,7 @@ const userSchema = new Schema({
     fssai_image_url: String,
     verified: {
         type: Boolean,
-        default: false,
+        default: true,
     },
     otp_verified: {
         type: Boolean,
