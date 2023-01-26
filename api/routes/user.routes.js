@@ -11,6 +11,7 @@ router.get('/', (req, res) => {
 
 router.post('/register/:userType', userController.createUser);
 router.get('/generate-otp/:user_id', userController.generateOtp);
+router.get('/verify-otp/:otp/:user_id', userController.verifyOtp);
 
 
 module.exports = router;

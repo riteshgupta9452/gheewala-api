@@ -40,3 +40,34 @@ module.exports.generateOtp = async (req, res) => {
         });
     });
 };
+
+
+module.exports.verifyOtp = async (req, res) => {
+    const user = await User.findOne({ _id: req.params.user_id });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    if (user.otp === req.params.otp && user.verified) {
+        user.otp_verified = true;
+        user.save((err, user) => {
+            if (err) {
+                return res.status(400).json({
+                    err: "NOT able to save user in DB"
+                });
+            }
+            return res.json({
+                message: "OTP verified successfully",
+                success: true,
+                token: util.generateJsonWebToken(user),
+            });
+        });
+    } else
+        return res.json({
+            message: "OTP verification failed",
+            success: false,
+        });
+};
