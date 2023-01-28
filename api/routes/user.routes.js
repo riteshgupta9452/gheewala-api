@@ -7,8 +7,8 @@ const middleware = require('../functions/middleware');
 router.get('/', middleware.tokenVerify, userController.getUser);
 
 router.post('/register/:userType', userController.createUser);
-router.get('/generate-otp/:user_id', userController.generateOtp);
-router.get('/verify-otp/:otp/:user_id', userController.verifyOtp);
+router.get('/generate-otp/:mobile_no', userController.generateOtp);
+router.get('/verify-otp/:otp/:mobile_no', userController.verifyOtp);
 
 
 module.exports = router;
