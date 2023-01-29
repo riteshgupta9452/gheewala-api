@@ -273,7 +273,7 @@ module.exports.setDefaultAddress = async (req, res) => {
         });
     }
 
-    const defaultAddress = await Address.find({ 
+    const defaultAddress = await Address.findOne({ 
         user_id: req.userId,
         is_default: true, 
     });
