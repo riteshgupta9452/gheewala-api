@@ -18,6 +18,29 @@ module.exports.createUser = async (req, res) => {
     });
 };
 
+module.exports.editUser = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    Object.keys.forEach(key => {
+        user[key] = req.body[key];
+    });
+
+    user.save((err, user) => {
+        if (err) {
+            return res.status(400).json({
+                err: "NOT able to save user in DB"
+            });
+        }
+        res.json(user);
+    });
+};
+
 module.exports.generateOtp = async (req, res) => {
     const user = await User.findOne({ phone_number: req.params.mobile_no });
 
