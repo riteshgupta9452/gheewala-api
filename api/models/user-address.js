@@ -17,6 +17,10 @@ const addressSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    is_viewable: {
+        type: Boolean,
+        default: true,
+    }
 }, {
     timestamps: true,
 });

@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const Address = require('../models/user-address');
 const util = require('../functions/util');
 
 module.exports.createUser = async (req, res) => {
@@ -157,6 +158,147 @@ module.exports.toggleVerification = async (req, res) => {
         }
         return res.json({
             message: "User verification toggled successfully",
+            success: true,
+        });
+    });
+};
+
+module.exports.addAddress = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const address = new Address({
+        user_id: req.userId,
+        address: req.body.address,
+        title: req.params.title,
+    });
+
+    address.save((err) => {
+        if (err) {
+            return res.status(400).json({
+                err: "NOT able to save address in DB"
+            });
+        }
+        return res.json({
+            message: "Address saved successfully",
+            success: true,
+        });
+    });
+};
+
+module.exports.editAddress = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const address = await Address.findOne({ _id: req.params.address_id });
+
+    if (!address) {
+        return res.status(400).json({
+            err: "Address not found"
+        });
+    }
+
+    address.address = req.body.address || address.address;
+    address.title = req.body.title || address.title;
+    
+    address.save((err) => {
+        if (err) {
+            return res.status(400).json({
+                err: "NOT able to save address in DB"
+            });
+        }
+        return res.json({
+            message: "Address saved successfully",
+            success: true,
+        });
+    });
+};
+
+module.exports.deleteAddress = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const address = await Address.findOne({ _id: req.params.address_id });
+
+    if (!address) {
+        return res.status(400).json({
+            err: "Address not found"
+        });
+    }
+
+    address.is_viewable = false;
+    
+    address.save((err) => {
+        if (err) {
+            return res.status(400).json({
+                err: "NOT able to save address in DB"
+            });
+        }
+        return res.json({
+            message: "Address deleted successfully",
+            success: true,
+        });
+    });
+}; 
+
+module.exports.setDefaultAddress = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const address = await Address.findOne({ _id: req.params.address_id });
+
+    if (!address) {
+        return res.status(400).json({
+            err: "Address not found"
+        });
+    }
+
+    const defaultAddress = await Address.find({ 
+        user_id: req.userId,
+        is_default: true, 
+    });
+
+    if (defaultAddress) {
+        defaultAddress.is_default = false;
+        await defaultAddress.save((err) => {
+            if (err) {
+                return res.status(400).json({
+                    err: "NOT able to save address details in DB"
+                });
+            }
+        });
+    }
+    
+    address.is_default = true;
+    
+    address.save((err) => {
+        if (err) {
+            return res.status(400).json({
+                err: "NOT able to save address in DB"
+            });
+        }
+        return res.json({
+            message: "Address details updated successfully",
             success: true,
         });
     });
