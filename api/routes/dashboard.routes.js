@@ -6,6 +6,6 @@ const middleware = require('../functions/middleware');
 
 router.use(middleware.tokenVerify);
 
-// router.get('/', dashboardController.getDashboard);
+router.get('/:category_id', dashboardController.getDashboard);
 
 module.exports = router;
