@@ -8,7 +8,7 @@ router.get('/', middleware.tokenVerify, userController.getUser);
 router.post('/register/:userType', userController.createUser);
 router.get('/generate-otp/:mobile_no', userController.generateOtp);
 router.get('/verify-otp/:otp/:mobile_no', userController.verifyOtp);
-router.post('edit-profile', middleware.tokenVerify, userController.editUser);
+router.post('/edit-profile', middleware.tokenVerify, userController.editUser);
 
 
 module.exports = router;
