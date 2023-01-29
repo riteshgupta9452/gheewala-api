@@ -303,3 +303,23 @@ module.exports.setDefaultAddress = async (req, res) => {
         });
     });
 };
+
+module.exports.getAddress = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const userAddress = await Address.find({ 
+        user_id: req.userId,
+        is_viewable: true,
+    });
+
+    return res.json({
+        data: userAddress,
+        success: true,
+    });
+};

@@ -17,5 +17,6 @@ router.post('/address/:title', userController.addAddress);
 router.put('/address/:address_id', userController.editAddress);
 router.delete('/address/:address_id', userController.deleteAddress);
 router.put('/address/:address_id/default', userController.setDefaultAddress);
+router.get("/address", userController.getAddress);
 
 module.exports = router;
