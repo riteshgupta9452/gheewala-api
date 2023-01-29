@@ -1,6 +1,8 @@
 const Product = require('../models/product');
 const ProductCategory = require("../models/product-category");
 const User = require('../models/user');
+const Cart = require('../models/cart');
+const Address = require('../models/user-address');
 
 module.exports.getDashboard = async (req, res) => {
     const user = await User.findOne({ _id: req.userId });
@@ -55,6 +57,292 @@ module.exports.getDashboard = async (req, res) => {
             products: products.map(prod => ({ ...prod, price: prod.price[user.user_type] })),
             categories,
         },
+    });
+};
+
+module.exports.addToCart = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const product = await Product.findOne({ _id: req.params.product_id });
+
+    if (!product) {
+        return res.status(400).json({
+            err: "Product not found"
+        });
+    }
+
+    let cart = await Cart.findOne({ user: req.userId });
+
+    if (!cart) {
+        cart = await Cart.create({
+            user: req.userId,
+            items: [product._id],
+            total: 0,
+        });
+    } else {
+        cart.items.push(product._id);
+    }
+
+    cart.total += product.price[user.user_type];
+
+    await cart.save();
+
+    return res.status(200).json({
+        success: true,
+        message: "Product added to cart",
+    });
+};
+
+module.exports.getCart = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const cart = await Cart
+        .findOne({ user: req.userId, status: "pending" })
+        .populate('products.product address')
+        .lean();
+
+    if (!cart) {
+        return res.status(200).json({
+            success: false,
+            data: {}
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        data: {
+            cart,
+        }
+    });
+};
+
+module.exports.updateCartProductQuantity = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    await Cart
+        .updateOne({
+            user: req.userId,
+            status: "pending",
+            "products.product": req.params.product_id,
+        }, {
+            $set: {
+                "products.$[elem].quantity": req.params.quantity
+            }
+        });
+
+    const cart = await Cart
+        .findOne({ user: req.userId, status: "pending" })
+        .populate('products.product address')
+        .lean();
+
+    let prodIdsToPul = cart.products
+        .filter(prod => prod.quantity === 0)
+        .map(el => el.product._id);
+
+    await Cart.updateOne({
+        user: req.userId,
+        status: "pending",
+    }, {
+        $pull: {
+            products: {
+                product: {
+                    $in: prodIdsToPul
+                }
+            }
+        }
+    });
+    
+    return res.status(200).json({
+        success: true,
+        message: "Product quantity updated",
+    });
+};
+
+module.exports.deleteCartProduct = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    await Cart.updateOne({
+        user: req.userId,
+        status: "pending",
+    }, {
+        $pull: {
+            products: {
+                product: req.params.product_id
+            }
+        }
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Product deleted",
+    });
+};
+
+module.exports.checkout = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    const cart = await Cart
+        .findOne({ user: req.userId, status: "pending" })
+        .populate('products.product address')
+        .lean();
+
+    if (!cart) {
+        return res.status(400).json({
+            err: "Cart not found"
+        });
+    }
+
+    if (cart.products.length === 0) {
+        return res.status(400).json({
+            err: "Cart is empty"
+        });
+    }
+
+    if (!req.params.address_id) {
+        return res.status(400).json({
+            err: "Address not found"
+        });
+    }
+
+    await Cart.updateOne({
+        user: req.userId,
+        status: "pending",
+    }, {
+        $set: {
+            status: "processing",
+            address: req.params.address_id,
+        }
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Order placed",
+    });
+};
+
+module.exports.ship = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    if (!req.params.address_id) {
+        return res.status(400).json({
+            err: "Address not found"
+        });
+    }
+
+    const cart = await Cart
+        .findOne({ user: req.userId, status: "processing", address: req.params.address_id })
+        .populate('products.product address')
+        .lean();
+
+    if (!cart) {
+        return res.status(400).json({
+            err: "Cart not found"
+        });
+    }
+
+    if (cart.products.length === 0) {
+        return res.status(400).json({
+            err: "Cart is empty"
+        });
+    }
+
+    await Cart.updateOne({
+        user: req.userId,
+        status: "processing",
+        address: req.params.address_id,
+    }, {
+        $set: {
+            status: "shipped",
+        }
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Order shipped",
+    });
+};
+
+module.exports.deliver = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    if (!req.params.address_id) {
+        return res.status(400).json({
+            err: "Address not found"
+        });
+    }
+
+    const cart = await Cart
+        .findOne({ user: req.userId, status: "shipped", address: req.params.address_id })
+        .populate('products.product address')
+        .lean();
+
+    if (!cart) {
+        return res.status(400).json({
+            err: "Cart not found"
+        });
+    }
+
+    if (cart.products.length === 0) {
+        return res.status(400).json({
+            err: "Cart is empty"
+        });
+    }
+
+    await Cart.updateOne({
+        user: req.userId,
+        status: "shipped",
+        address: req.params.address_id,
+    }, {
+        $set: {
+            status: "delivered",
+        }
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Order delivered",
     });
 };
 
