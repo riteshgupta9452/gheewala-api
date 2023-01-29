@@ -28,7 +28,7 @@ module.exports.editUser = async (req, res) => {
         });
     }
 
-    Object.keys.forEach(key => {
+    Object.keys(req.body).forEach(key => {
         user[key] = req.body[key];
     });
 
