@@ -1,7 +1,16 @@
 const Product = require('../models/product');
 const ProductCategory = require("../models/product-category");
+const User = require('../models/user');
 
 module.exports.getDashboard = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
     const categories = await ProductCategory.find().lean();
 
     if (!req.query.page || !req.query.limit) {
@@ -43,7 +52,7 @@ module.exports.getDashboard = async (req, res) => {
     return res.status(200).json({
         success: true,
         data: {
-            products,
+            products: products.map(prod => ({ ...prod, price: prod.price[user.user_type] })),
             categories,
         },
     });
