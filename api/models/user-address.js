@@ -7,6 +7,7 @@ const addressSchema = new Schema({
     },
     address: {
         house_flat_no: String,
+        building_name: String,
         street: String,
         city: String,
         state: String,
