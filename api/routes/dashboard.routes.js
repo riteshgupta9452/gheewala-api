@@ -12,7 +12,7 @@ router.use(middleware.tokenVerify);
 router.get('/:category_id', dashboardController.getDashboard);
 
 router.post('/cart/:product_id', dashboardController.addToCart);
-router.get('/cart', dashboardController.getCart);
+router.get('/cart/items', dashboardController.getCart);
 router.put('/cart/:product_id/:quantity', dashboardController.updateCartProductQuantity);
 router.delete('/cart/:product_id', dashboardController.deleteCartProduct);
 

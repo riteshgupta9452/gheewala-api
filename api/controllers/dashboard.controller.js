@@ -82,11 +82,17 @@ module.exports.addToCart = async (req, res) => {
     if (!cart) {
         cart = await Cart.create({
             user: req.userId,
-            items: [product._id],
+            products: [{
+                product: product._id,
+                quantity: 1,
+            }],
             total: 0,
         });
     } else {
-        cart.items.push(product._id);
+        cart.products.push({
+            product: product._id,
+            quantity: 1,
+        });
     }
 
     cart.total += product.price[user.user_type];
@@ -137,16 +143,21 @@ module.exports.updateCartProductQuantity = async (req, res) => {
         });
     }
 
-    await Cart
-        .updateOne({
+    let quantityUpdate = await Cart
+        .findOne({
             user: req.userId,
             status: "pending",
-            "products.product": req.params.product_id,
-        }, {
-            $set: {
-                "products.$[elem].quantity": req.params.quantity
-            }
         });
+
+
+    quantityUpdate.products = quantityUpdate.products.map(prod => {
+        if (prod.product.toString() === req.params.product_id) {
+            prod.quantity = req.params.quantity;
+        }
+        return prod;
+    });
+    
+    await quantityUpdate.save();
 
     const cart = await Cart
         .findOne({ user: req.userId, status: "pending" })
@@ -169,7 +180,7 @@ module.exports.updateCartProductQuantity = async (req, res) => {
             }
         }
     });
-    
+
     return res.status(200).json({
         success: true,
         message: "Product quantity updated",
