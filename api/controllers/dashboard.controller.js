@@ -77,7 +77,7 @@ module.exports.addToCart = async (req, res) => {
         });
     }
 
-    let cart = await Cart.findOne({ user: req.userId });
+    let cart = await Cart.findOne({ user: req.userId, status: 'pending' });
 
     if (!cart) {
         cart = await Cart.create({
@@ -89,6 +89,11 @@ module.exports.addToCart = async (req, res) => {
             total: 0,
         });
     } else {
+        if (cart.products.filter(el => el.product.toString() === product._id.toString()).length > 0) {
+            return res.status(200).json({
+                message: "Product already in cart"
+            });
+        }
         cart.products.push({
             product: product._id,
             quantity: 1,
