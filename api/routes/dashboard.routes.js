@@ -20,4 +20,6 @@ router.get('/checkout/:address_id', dashboardController.checkout);
 router.get('/ship/:address_id', dashboardController.ship);
 router.get('/deliver/:address_id', dashboardController.deliver);
 
+router.get('/:status/orders', dashboardController.getPreviousOrders);
+
 module.exports = router;

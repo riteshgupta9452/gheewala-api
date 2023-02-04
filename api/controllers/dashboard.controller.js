@@ -362,6 +362,50 @@ module.exports.deliver = async (req, res) => {
     });
 };
 
+module.exports.getPreviousOrders = async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json({
+            err: "User not found"
+        });
+    }
+
+    if (!req.query.page || !req.query.limit) {
+        return res.status(400).json({
+            message: "page and limit are required"
+        });
+    }
+
+    const page = req.query.page;
+    const limit = req.query.limit;
+    const skipIndex = (page - 1) * limit;
+
+    const status = req.params.status === "delivered" ? "delivered" : {
+        $nin: ["pending", "delivered"]
+    };
+    
+    const carts = await Cart
+        .find({ user: req.userId, status })
+        .populate('products.product')
+        .sort({ createdAt: -1 })
+        .skip(skipIndex)
+        .limit(limit)
+        .lean();
+
+    if (!carts) {
+        return res.status(400).json({
+            err: "Carts not found"
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: "Carts fetched",
+        previousOrders: carts,
+    });
+};
+
 // module.exports.seedCategories = async (req, res) => {
 //     let cat = [
 //         "Milk",
