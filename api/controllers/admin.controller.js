@@ -31,7 +31,7 @@ module.exports.login = async (req, res) => {
             err: "Invalid password"
         });
     }
-    const token = util.generateToken(admin);
+    const token = util.generateJsonWebToken(admin);
     res.json({
         message: "Login successful",
         success: true,

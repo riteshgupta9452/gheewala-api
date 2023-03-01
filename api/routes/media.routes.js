@@ -9,7 +9,7 @@ const s3Service = require('../../services/aws/s3.service');
 // router.use(middleware.tokenVerify);
 
 router.post('/upload', middleware.singleFileUploadToBuffer, async (req, res) => {
-  console.log(req.file);
+  console.log("file",req);
 
   const fileName = Date.now() + '-' + req.file.originalname;
   const buffer = req.file.buffer;

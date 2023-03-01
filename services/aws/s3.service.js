@@ -2,7 +2,7 @@ const s3 = require("../../util/aws-s3.util");
 
 module.exports.uploadToS3 = async (fileName, buffer) => {
   const params = {
-    Bucket: "gheewala-bkt",
+    Bucket: "gheewala-bucket",
     Key: fileName,
     Body: buffer,
   };
@@ -19,7 +19,7 @@ module.exports.uploadToS3 = async (fileName, buffer) => {
 
 module.exports.getS3Object = async (fileName) => {
   const params = {
-    Bucket: "gheewala-bkt",
+    Bucket: "gheewala-bucket",
     Key: fileName,
   };
 
@@ -33,7 +33,7 @@ module.exports.getS3Object = async (fileName) => {
   });
 }
 
-module.exports.streamGetObject = async (res, key, bucketName = "gheewala-bkt") => {
+module.exports.streamGetObject = async (res, key, bucketName = "gheewala-bucket") => {
   const params = {
     Bucket: bucketName,
     Key: key,
