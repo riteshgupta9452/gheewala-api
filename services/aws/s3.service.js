@@ -2,11 +2,12 @@ const s3 = require("../../util/aws-s3.util");
 
 const bucket = "gheewala-bucket";
 
-module.exports.uploadToS3 = async (fileName, buffer) => {
+module.exports.uploadToS3 = async (fileName, buffer, mimetype) => {
   const params = {
     Bucket: bucket,
     Key: fileName,
     Body: buffer,
+    ContentType: mimetype,
   };
 
   return new Promise((resolve, reject) => {
@@ -17,7 +18,7 @@ module.exports.uploadToS3 = async (fileName, buffer) => {
       resolve(data);
     });
   });
-}
+};
 
 module.exports.getS3Object = async (fileName) => {
   const params = {
@@ -33,7 +34,7 @@ module.exports.getS3Object = async (fileName) => {
       resolve(data);
     });
   });
-}
+};
 
 module.exports.streamGetObject = async (res, key, bucketName = bucket) => {
   const params = {
@@ -44,9 +45,9 @@ module.exports.streamGetObject = async (res, key, bucketName = bucket) => {
   s3.getObject(params, (err, data) => {
     if (err) {
       console.log(err);
-      return res.status(500).send('Error retrieving S3 object');
+      return res.status(500).send("Error retrieving S3 object");
     }
-    res.setHeader('Content-Type', data.ContentType);
+    res.setHeader("Content-Type", data.ContentType);
     res.send(data.Body);
   });
-}
+};

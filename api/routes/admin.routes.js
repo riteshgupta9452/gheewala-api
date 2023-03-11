@@ -4,6 +4,7 @@ const router = express.Router();
 const userController = require("../controllers/user.controller");
 const adminController = require("../controllers/admin.controller");
 const categoryController = require("./../controllers/category.controller");
+const orderController = require("./../controllers/order.controller");
 const middleware = require("../functions/middleware");
 
 router.post("/generate-password", adminController.generatePassword);
@@ -28,5 +29,6 @@ router.get(
 router.get("/toggle-verification/:user_id", userController.toggleVerification);
 router.get("/categories", categoryController.getCategories);
 router.get("/category/:id", categoryController.toggleCategory);
+router.get("/orders", orderController.getOrders);
 
 module.exports = router;

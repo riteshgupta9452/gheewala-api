@@ -1,11 +1,12 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const userSchema = new Schema({
+const userSchema = new Schema(
+  {
     name: String,
     phone_number: String,
     user_type: {
-        type: String,
-        enum: ["b2b", "b2c"],
+      type: String,
+      enum: ["b2b", "b2c"],
     },
     firm_name: String,
     shop_unit: String,
@@ -20,17 +21,21 @@ const userSchema = new Schema({
     gst_image_url: String,
     fssai_registration: String,
     fssai_image_url: String,
+    profile_image_url: String,
+    expiry_date: Date,
     verified: {
-        type: Boolean,
-        default: true,
+      type: Boolean,
+      default: false,
     },
     otp_verified: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
     otp: String,
-}, {
+  },
+  {
     timestamps: true,
-});
+  }
+);
 
-module.exports = mongoose.model('users', userSchema);
+module.exports = mongoose.model("users", userSchema);
