@@ -20,3 +20,17 @@ module.exports.toggleCategory = async (req, res) => {
     .status(200)
     .json({ status: true, message: "Status successfully updated" });
 };
+
+module.exports.createCategory = async (req, res) => {
+  const category = new ProductCategory(req.body);
+  category.save((err, category) => {
+    if (err) {
+      return res.status(400).json({
+        err: "NOT able to save user in DB",
+      });
+    }
+    res
+      .status(200)
+      .json({ status: true, message: "Category successfully created" });
+  });
+};
