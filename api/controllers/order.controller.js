@@ -29,6 +29,9 @@ module.exports.getOrders = async (req, res) => {
         as: "address",
       },
     },
+    {
+      $unwind: "$address",
+    },
   ];
 
   const orders = (
