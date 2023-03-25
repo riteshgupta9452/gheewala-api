@@ -3,6 +3,32 @@ const Address = require("../models/user-address");
 const util = require("../functions/util");
 const Paginator = require("./../../util/paginator");
 
+module.exports.getUserTypes = async (req, res) => {
+  const types = [
+    "b2b",
+    "b2b-1",
+    "b2b-2",
+    "b2b-3",
+    "b2b-4",
+    "b2b-5",
+    "b2b-6",
+    "b2b-7",
+    "b2b-8",
+    "b2b-9",
+    "b2b-10",
+    "b2b-11",
+    "b2b-12",
+    "b2b-13",
+    "b2b-14",
+    "b2b-15",
+    "b2b-16",
+    "b2b-17",
+    "b2b-18",
+    "b2c",
+  ];
+  return res.json({ status: true, data: types });
+};
+
 module.exports.createUser = async (req, res) => {
   req.body.user_type = req.params.userType;
   const existingUser = await User.findOne({
