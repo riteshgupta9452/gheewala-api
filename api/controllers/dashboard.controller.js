@@ -1,409 +1,536 @@
-const Product = require('../models/product');
+const Product = require("../models/product");
 const ProductCategory = require("../models/product-category");
-const User = require('../models/user');
-const Cart = require('../models/cart');
-const Address = require('../models/user-address');
+const User = require("../models/user");
+const Cart = require("../models/cart");
+const Address = require("../models/user-address");
+const Dashboard = require("./../models/dashboard");
+const ObjectId = require("mongoose").Types.ObjectId;
+
+module.exports.getDashboardData = async (req, res) => {
+  const pipeline = [
+    { $match: { is_viewable: true } },
+    {
+      $lookup: {
+        from: "products",
+        localField: "products",
+        foreignField: "_id",
+        as: "products",
+      },
+    },
+  ];
+  const dashboard = await Dashboard.aggregate(pipeline);
+  return res.status(200).json({ status: true, data: dashboard });
+};
+
+module.exports.createDashboardCategory = async (req, res) => {
+  req.body = {
+    title: req.body.title,
+    products: [],
+    is_viewable: req.body.is_viewable,
+  };
+  const dashboard = new Dashboard(req.body);
+  dashboard.save((err, dashboard) => {
+    if (err) {
+      return res.status(400).json({
+        err: "NOT able to save user in DB",
+      });
+    }
+    res
+      .status(200)
+      .json({ status: true, message: "Dashboard title Successfully added" });
+  });
+};
+
+module.exports.getDashboardCategoryForAdmin = async (req, res) => {
+  const dashboardCategories = await Dashboard.find({});
+  return res.status(200).json({ status: true, data: dashboardCategories });
+};
+
+module.exports.getDashboardCategoryDetailsForAdmin = async (req, res) => {
+  const pipeline = [
+    { $match: { _id: ObjectId(req.params.id) } },
+    { $addFields: { products_id: "$products" } },
+    {
+      $lookup: {
+        from: "products",
+        localField: "products_id",
+        foreignField: "_id",
+        as: "products",
+      },
+    },
+  ];
+  const dashboardCategoryDetail = await Dashboard.aggregate(pipeline);
+  return res
+    .status(200)
+    .json({ status: true, data: dashboardCategoryDetail[0] });
+};
+
+module.exports.updateDashboardProducts = async (req, res) => {
+  const dashboardCategory = await Dashboard.findOne({
+    _id: ObjectId(req.params.id),
+  });
+  console.log("dashboardCategory", dashboardCategory);
+  if (!dashboardCategory)
+    return res.status(404).json({
+      err: "Dasbhoard not found",
+    });
+  dashboardCategory.products = req.body.products_id.map((pId) => {
+    return ObjectId(pId);
+  });
+  await dashboardCategory.save();
+  return res
+    .status(200)
+    .json({ status: true, message: "Product successfully updated" });
+};
+
+module.exports.toggleDashboardCategory = async (req, res) => {
+  const dashboard = await Dashboard.findOne({
+    _id: ObjectId(req.params.id),
+  });
+  if (!dashboard)
+    return res.status(404).json({
+      err: "Dashboard not found",
+    });
+  dashboard.is_viewable = !dashboard.is_viewable;
+  await dashboard.save();
+  return res
+    .status(200)
+    .json({ status: true, message: "Status successfully updated" });
+};
+
+module.exports.deleteDashboardCategory = async (req, res) => {
+  await Dashboard.remove({ _id: ObjectId(req.params.id) });
+  return res
+    .status(200)
+    .json({ status: true, message: "Category successfully deleted" });
+};
 
 module.exports.getDashboard = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
-    }
-
-    const categories = await ProductCategory.find().lean();
-
-    if (!req.query.page || !req.query.limit) {
-        return res.status(400).json({
-            message: "page and limit are required"
-        });
-    }
-
-    const page = req.query.page;
-    const limit = req.query.limit;
-    const skipIndex = (page - 1) * limit;
-
-    let query = {};
-
-    if (req.query.text) {
-        query = {
-            ...query,
-            label: {
-                $regex: req.query.text,
-                $options: "i"
-            }
-        };
-    }
-
-    if (req.params.category_id && req.params.category_id !== "all") {
-        query = {
-            ...query,
-            category: req.params.category_id
-        };
-    }
-
-    const products = await Product
-        .find(query)
-        .populate('category')
-        .skip(skipIndex)
-        .limit(limit)
-        .lean();
-
-    return res.status(200).json({
-        success: true,
-        data: {
-            products: products.map(prod => ({ ...prod, price: prod.price[user.user_type] })),
-            categories,
-        },
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
     });
+  }
+
+  const categories = await ProductCategory.find().lean();
+
+  if (!req.query.page || !req.query.limit) {
+    return res.status(400).json({
+      message: "page and limit are required",
+    });
+  }
+
+  const page = req.query.page;
+  const limit = req.query.limit;
+  const skipIndex = (page - 1) * limit;
+
+  let query = {};
+
+  if (req.query.text) {
+    query = {
+      ...query,
+      label: {
+        $regex: req.query.text,
+        $options: "i",
+      },
+    };
+  }
+
+  if (req.params.category_id && req.params.category_id !== "all") {
+    query = {
+      ...query,
+      category: req.params.category_id,
+    };
+  }
+
+  const products = await Product.find(query)
+    .populate("category")
+    .skip(skipIndex)
+    .limit(limit)
+    .lean();
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      products: products.map((prod) => ({
+        ...prod,
+        price: prod.price[user.user_type],
+      })),
+      categories,
+    },
+  });
 };
 
 module.exports.addToCart = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
-    }
-
-    const product = await Product.findOne({ _id: req.params.product_id });
-
-    if (!product) {
-        return res.status(400).json({
-            err: "Product not found"
-        });
-    }
-
-    let cart = await Cart.findOne({ user: req.userId, status: 'pending' });
-
-    if (!cart) {
-        cart = await Cart.create({
-            user: req.userId,
-            products: [{
-                product: product._id,
-                quantity: 1,
-            }],
-            total: 0,
-        });
-    } else {
-        if (cart.products.filter(el => el.product.toString() === product._id.toString()).length > 0) {
-            return res.status(200).json({
-                message: "Product already in cart"
-            });
-        }
-        cart.products.push({
-            product: product._id,
-            quantity: 1,
-        });
-    }
-
-    cart.total += product.price[user.user_type];
-
-    await cart.save();
-
-    return res.status(200).json({
-        success: true,
-        message: "Product added to cart",
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
     });
+  }
+
+  const product = await Product.findOne({ _id: req.params.product_id });
+
+  if (!product) {
+    return res.status(400).json({
+      err: "Product not found",
+    });
+  }
+
+  let cart = await Cart.findOne({ user: req.userId, status: "pending" });
+
+  if (!cart) {
+    cart = await Cart.create({
+      user: req.userId,
+      products: [
+        {
+          product: product._id,
+          quantity: 1,
+        },
+      ],
+      total: 0,
+    });
+  } else {
+    if (
+      cart.products.filter(
+        (el) => el.product.toString() === product._id.toString()
+      ).length > 0
+    ) {
+      return res.status(200).json({
+        message: "Product already in cart",
+      });
+    }
+    cart.products.push({
+      product: product._id,
+      quantity: 1,
+    });
+  }
+
+  cart.total += product.price[user.user_type];
+
+  await cart.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Product added to cart",
+  });
 };
 
 module.exports.getCart = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
-    }
-
-    const cart = await Cart
-        .findOne({ user: req.userId, status: "pending" })
-        .populate('products.product address')
-        .lean();
-
-    if (!cart) {
-        return res.status(200).json({
-            success: false,
-            data: {}
-        });
-    }
-
-    return res.status(200).json({
-        success: true,
-        data: {
-            cart,
-        }
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
     });
+  }
+
+  const cart = await Cart.findOne({ user: req.userId, status: "pending" })
+    .populate("products.product address")
+    .lean();
+
+  if (!cart) {
+    return res.status(200).json({
+      success: false,
+      data: {},
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      cart,
+    },
+  });
 };
 
 module.exports.updateCartProductQuantity = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
+    });
+  }
+
+  let quantityUpdate = await Cart.findOne({
+    user: req.userId,
+    status: "pending",
+  });
+
+  quantityUpdate.products = quantityUpdate.products.map((prod) => {
+    if (prod.product.toString() === req.params.product_id) {
+      prod.quantity = req.params.quantity;
     }
+    return prod;
+  });
 
-    let quantityUpdate = await Cart
-        .findOne({
-            user: req.userId,
-            status: "pending",
-        });
+  await quantityUpdate.save();
 
+  const cart = await Cart.findOne({ user: req.userId, status: "pending" })
+    .populate("products.product address")
+    .lean();
 
-    quantityUpdate.products = quantityUpdate.products.map(prod => {
-        if (prod.product.toString() === req.params.product_id) {
-            prod.quantity = req.params.quantity;
-        }
-        return prod;
-    });
-    
-    await quantityUpdate.save();
+  let prodIdsToPul = cart.products
+    .filter((prod) => prod.quantity === 0)
+    .map((el) => el.product._id);
 
-    const cart = await Cart
-        .findOne({ user: req.userId, status: "pending" })
-        .populate('products.product address')
-        .lean();
+  await Cart.updateOne(
+    {
+      user: req.userId,
+      status: "pending",
+    },
+    {
+      $pull: {
+        products: {
+          product: {
+            $in: prodIdsToPul,
+          },
+        },
+      },
+    }
+  );
 
-    let prodIdsToPul = cart.products
-        .filter(prod => prod.quantity === 0)
-        .map(el => el.product._id);
-
-    await Cart.updateOne({
-        user: req.userId,
-        status: "pending",
-    }, {
-        $pull: {
-            products: {
-                product: {
-                    $in: prodIdsToPul
-                }
-            }
-        }
-    });
-
-    return res.status(200).json({
-        success: true,
-        message: "Product quantity updated",
-    });
+  return res.status(200).json({
+    success: true,
+    message: "Product quantity updated",
+  });
 };
 
 module.exports.deleteCartProduct = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
+    });
+  }
+
+  await Cart.updateOne(
+    {
+      user: req.userId,
+      status: "pending",
+    },
+    {
+      $pull: {
+        products: {
+          product: req.params.product_id,
+        },
+      },
     }
+  );
 
-    await Cart.updateOne({
-        user: req.userId,
-        status: "pending",
-    }, {
-        $pull: {
-            products: {
-                product: req.params.product_id
-            }
-        }
-    });
-
-    return res.status(200).json({
-        success: true,
-        message: "Product deleted",
-    });
+  return res.status(200).json({
+    success: true,
+    message: "Product deleted",
+  });
 };
 
 module.exports.checkout = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
-    }
-
-    const cart = await Cart
-        .findOne({ user: req.userId, status: "pending" })
-        .populate('products.product address')
-        .lean();
-
-    if (!cart) {
-        return res.status(400).json({
-            err: "Cart not found"
-        });
-    }
-
-    if (cart.products.length === 0) {
-        return res.status(400).json({
-            err: "Cart is empty"
-        });
-    }
-
-    if (!req.params.address_id) {
-        return res.status(400).json({
-            err: "Address not found"
-        });
-    }
-
-    await Cart.updateOne({
-        user: req.userId,
-        status: "pending",
-    }, {
-        $set: {
-            status: "processing",
-            address: req.params.address_id,
-        }
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
     });
+  }
 
-    return res.status(200).json({
-        success: true,
-        message: "Order placed",
+  const cart = await Cart.findOne({ user: req.userId, status: "pending" })
+    .populate("products.product address")
+    .lean();
+
+  if (!cart) {
+    return res.status(400).json({
+      err: "Cart not found",
     });
+  }
+
+  if (cart.products.length === 0) {
+    return res.status(400).json({
+      err: "Cart is empty",
+    });
+  }
+
+  if (!req.params.address_id) {
+    return res.status(400).json({
+      err: "Address not found",
+    });
+  }
+
+  await Cart.updateOne(
+    {
+      user: req.userId,
+      status: "pending",
+    },
+    {
+      $set: {
+        status: "processing",
+        address: req.params.address_id,
+      },
+    }
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: "Order placed",
+  });
 };
 
 module.exports.ship = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
-    }
-
-    if (!req.params.address_id) {
-        return res.status(400).json({
-            err: "Address not found"
-        });
-    }
-
-    const cart = await Cart
-        .findOne({ user: req.userId, status: "processing", address: req.params.address_id })
-        .populate('products.product address')
-        .lean();
-
-    if (!cart) {
-        return res.status(400).json({
-            err: "Cart not found"
-        });
-    }
-
-    if (cart.products.length === 0) {
-        return res.status(400).json({
-            err: "Cart is empty"
-        });
-    }
-
-    await Cart.updateOne({
-        user: req.userId,
-        status: "processing",
-        address: req.params.address_id,
-    }, {
-        $set: {
-            status: "shipped",
-        }
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
     });
+  }
 
-    return res.status(200).json({
-        success: true,
-        message: "Order shipped",
+  if (!req.params.address_id) {
+    return res.status(400).json({
+      err: "Address not found",
     });
+  }
+
+  const cart = await Cart.findOne({
+    user: req.userId,
+    status: "processing",
+    address: req.params.address_id,
+  })
+    .populate("products.product address")
+    .lean();
+
+  if (!cart) {
+    return res.status(400).json({
+      err: "Cart not found",
+    });
+  }
+
+  if (cart.products.length === 0) {
+    return res.status(400).json({
+      err: "Cart is empty",
+    });
+  }
+
+  await Cart.updateOne(
+    {
+      user: req.userId,
+      status: "processing",
+      address: req.params.address_id,
+    },
+    {
+      $set: {
+        status: "shipped",
+      },
+    }
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: "Order shipped",
+  });
 };
 
 module.exports.deliver = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
-    }
-
-    if (!req.params.address_id) {
-        return res.status(400).json({
-            err: "Address not found"
-        });
-    }
-
-    const cart = await Cart
-        .findOne({ user: req.userId, status: "shipped", address: req.params.address_id })
-        .populate('products.product address')
-        .lean();
-
-    if (!cart) {
-        return res.status(400).json({
-            err: "Cart not found"
-        });
-    }
-
-    if (cart.products.length === 0) {
-        return res.status(400).json({
-            err: "Cart is empty"
-        });
-    }
-
-    await Cart.updateOne({
-        user: req.userId,
-        status: "shipped",
-        address: req.params.address_id,
-    }, {
-        $set: {
-            status: "delivered",
-        }
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
     });
+  }
 
-    return res.status(200).json({
-        success: true,
-        message: "Order delivered",
+  if (!req.params.address_id) {
+    return res.status(400).json({
+      err: "Address not found",
     });
+  }
+
+  const cart = await Cart.findOne({
+    user: req.userId,
+    status: "shipped",
+    address: req.params.address_id,
+  })
+    .populate("products.product address")
+    .lean();
+
+  if (!cart) {
+    return res.status(400).json({
+      err: "Cart not found",
+    });
+  }
+
+  if (cart.products.length === 0) {
+    return res.status(400).json({
+      err: "Cart is empty",
+    });
+  }
+
+  await Cart.updateOne(
+    {
+      user: req.userId,
+      status: "shipped",
+      address: req.params.address_id,
+    },
+    {
+      $set: {
+        status: "delivered",
+      },
+    }
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: "Order delivered",
+  });
 };
 
 module.exports.getPreviousOrders = async (req, res) => {
-    const user = await User.findOne({ _id: req.userId });
+  const user = await User.findOne({ _id: req.userId });
 
-    if (!user) {
-        return res.status(400).json({
-            err: "User not found"
-        });
-    }
-
-    if (!req.query.page || !req.query.limit) {
-        return res.status(400).json({
-            message: "page and limit are required"
-        });
-    }
-
-    const page = req.query.page;
-    const limit = req.query.limit;
-    const skipIndex = (page - 1) * limit;
-
-    const status = req.params.status === "delivered" ? "delivered" : {
-        $nin: ["pending", "delivered"]
-    };
-    
-    const carts = await Cart
-        .find({ user: req.userId, status })
-        .populate('products.product')
-        .sort({ createdAt: -1 })
-        .skip(skipIndex)
-        .limit(limit)
-        .lean();
-
-    if (!carts) {
-        return res.status(400).json({
-            err: "Carts not found"
-        });
-    }
-
-    return res.status(200).json({
-        success: true,
-        message: "Carts fetched",
-        previousOrders: carts,
+  if (!user) {
+    return res.status(400).json({
+      err: "User not found",
     });
+  }
+
+  if (!req.query.page || !req.query.limit) {
+    return res.status(400).json({
+      message: "page and limit are required",
+    });
+  }
+
+  const page = req.query.page;
+  const limit = req.query.limit;
+  const skipIndex = (page - 1) * limit;
+
+  const status =
+    req.params.status === "delivered"
+      ? "delivered"
+      : {
+          $nin: ["pending", "delivered"],
+        };
+
+  const carts = await Cart.find({ user: req.userId, status })
+    .populate("products.product")
+    .sort({ createdAt: -1 })
+    .skip(skipIndex)
+    .limit(limit)
+    .lean();
+
+  if (!carts) {
+    return res.status(400).json({
+      err: "Carts not found",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Carts fetched",
+    previousOrders: carts,
+  });
 };
 
 // module.exports.seedCategories = async (req, res) => {

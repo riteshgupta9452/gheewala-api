@@ -3,7 +3,13 @@ const Product = require("./../models/product");
 const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.getProducts = async (req, res) => {
-  const pipeline = [
+  const pipeline = [];
+  if (req.query.search && req.query.search != "")
+    pipeline.push({
+      $match: { label: { $regex: req.query.search, $options: "ig" } },
+    });
+
+  pipeline.push(
     {
       $lookup: {
         from: "categories",
@@ -14,8 +20,8 @@ module.exports.getProducts = async (req, res) => {
     },
     {
       $unwind: "$category",
-    },
-  ];
+    }
+  );
   const products = (
     await new Paginator(req.query.page)
       .setLimit(req.query.records_per_page)

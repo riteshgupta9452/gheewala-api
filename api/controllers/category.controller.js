@@ -1,6 +1,11 @@
 const ProductCategory = require("./../models/product-category");
 const ObjectId = require("mongoose").Types.ObjectId;
 
+module.exports.getCategoriesForUser = async (req, res) => {
+  const categories = await ProductCategory.find({ is_viewable: true });
+  res.json({ status: true, data: categories });
+};
+
 module.exports.getCategories = async (req, res) => {
   const categories = await ProductCategory.find({});
   res.json({ status: true, data: categories });
@@ -15,7 +20,7 @@ module.exports.toggleCategory = async (req, res) => {
       err: "Category not found",
     });
   category.is_viewable = !category.is_viewable;
-  category.save();
+  await category.save();
   return res
     .status(200)
     .json({ status: true, message: "Status successfully updated" });
