@@ -5,6 +5,7 @@ const userController = require("../controllers/user.controller");
 const bannerController = require("./../controllers/banner.controller");
 const middleware = require("../functions/middleware");
 const categoryController = require("./../controllers/category.controller");
+const productController = require("./../controllers/product.controller");
 
 router.post("/register/:userType", userController.createUser);
 router.get("/generate-otp/:mobile_no", userController.generateOtp);
@@ -26,4 +27,6 @@ router.get("/banners", bannerController.getBanners);
 
 // Categories
 router.get("/categories", categoryController.getCategoriesForUser);
+router.get("/category/:id", categoryController.getCategoryDetailForUser);
+router.get("/products", productController.getProductsForUser);
 module.exports = router;

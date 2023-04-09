@@ -11,6 +11,13 @@ module.exports.getCategories = async (req, res) => {
   res.json({ status: true, data: categories });
 };
 
+module.exports.getCategoryDetailForUser = async (req, res) => {
+  const category = await ProductCategory.findOne({
+    _id: ObjectId(req.params.id),
+  });
+  return res.json({ status: true, data: category });
+};
+
 module.exports.toggleCategory = async (req, res) => {
   const category = await ProductCategory.findOne({
     _id: ObjectId(req.params.id),

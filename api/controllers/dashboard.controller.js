@@ -18,7 +18,14 @@ module.exports.getDashboardData = async (req, res) => {
       },
     },
   ];
-  const dashboard = await Dashboard.aggregate(pipeline);
+  let dashboard = await Dashboard.aggregate(pipeline);
+  for (let index = 0; index < dashboard.length; index++) {
+    dashboard[index].products = dashboard[index].products.map((prod) => ({
+      ...prod,
+      price: prod.price[req.userData.user_type],
+    }));
+  }
+
   return res.status(200).json({ status: true, data: dashboard });
 };
 
