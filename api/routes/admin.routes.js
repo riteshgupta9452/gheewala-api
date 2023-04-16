@@ -8,6 +8,7 @@ const orderController = require("./../controllers/order.controller");
 const productController = require("./../controllers/product.controller");
 const bannerController = require("./../controllers/banner.controller");
 const dashboardController = require("./../controllers/dashboard.controller");
+const offerController = require("./../controllers/offer.controller");
 const middleware = require("../functions/middleware");
 
 router.post("/generate-password", adminController.generatePassword);
@@ -67,4 +68,11 @@ router.get(
   "/app-dashboard/:id",
   dashboardController.getDashboardCategoryDetailsForAdmin
 );
+
+// Offer
+router.post("/offers", offerController.createOffer);
+router.get("/offers", offerController.getOffersForAdmin);
+router.put("/offers/status/:id", offerController.toggleOffer);
+router.delete("/offers/:id", offerController.deleteOffer);
+
 module.exports = router;

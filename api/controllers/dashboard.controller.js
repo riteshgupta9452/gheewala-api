@@ -194,8 +194,9 @@ module.exports.addToCart = async (req, res) => {
       user: req.userId,
       products: [
         {
-          product: product._id,
+          product: product,
           quantity: 1,
+          product_total: product.price[user.user_type],
         },
       ],
       total: 0,
@@ -211,12 +212,14 @@ module.exports.addToCart = async (req, res) => {
       });
     }
     cart.products.push({
-      product: product._id,
+      product: product,
       quantity: 1,
+      product_total: product.price[user.user_type],
     });
   }
 
   cart.total += product.price[user.user_type];
+  cart.payable = cart.total;
 
   await cart.save();
 
@@ -236,7 +239,7 @@ module.exports.getCart = async (req, res) => {
   }
 
   const cart = await Cart.findOne({ user: req.userId, status: "pending" })
-    .populate("products.product address")
+    .populate("address")
     .lean();
 
   if (!cart) {
@@ -269,11 +272,18 @@ module.exports.updateCartProductQuantity = async (req, res) => {
   });
 
   quantityUpdate.products = quantityUpdate.products.map((prod) => {
-    if (prod.product.toString() === req.params.product_id) {
+    if (String(prod.product._id) === req.params.product_id) {
       prod.quantity = req.params.quantity;
+      prod.product_total =
+        prod.product.price[user.user_type] * req.params.quantity;
     }
     return prod;
   });
+
+  quantityUpdate.total = quantityUpdate.products.reduce((total, num) => {
+    return total + num.product_total;
+  }, 0);
+  quantityUpdate.payable = quantityUpdate.total;
 
   await quantityUpdate.save();
 
@@ -324,11 +334,21 @@ module.exports.deleteCartProduct = async (req, res) => {
     {
       $pull: {
         products: {
-          product: req.params.product_id,
+          _id: req.params.product_id,
         },
       },
     }
   );
+  const cart = await Cart.findOne({
+    user: req.userId,
+    status: "pending",
+  });
+
+  cart.total = cart.products.reduce((total, num) => {
+    return total + num.product_total;
+  }, 0);
+  cart.payable = cart.total;
+  await cart.save();
 
   return res.status(200).json({
     success: true,

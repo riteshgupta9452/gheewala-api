@@ -13,7 +13,7 @@ module.exports.getProductsForUser = async (req, res) => {
 
   if (req.query.search)
     pipeline.push({
-      $match: { label: { $regex: req.query.search, $options: "ig" } },
+      $match: { label: { $regex: req.query.search, $options: "i" } },
     });
 
   pipeline.push(

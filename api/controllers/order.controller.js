@@ -15,14 +15,6 @@ module.exports.getOrders = async (req, res) => {
     { $unwind: "$user" },
     {
       $lookup: {
-        from: "products",
-        localField: "products.product",
-        foreignField: "_id",
-        as: "items",
-      },
-    },
-    {
-      $lookup: {
         from: "addresses",
         localField: "address",
         foreignField: "_id",

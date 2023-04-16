@@ -6,6 +6,7 @@ const bannerController = require("./../controllers/banner.controller");
 const middleware = require("../functions/middleware");
 const categoryController = require("./../controllers/category.controller");
 const productController = require("./../controllers/product.controller");
+const offerController = require("./../controllers/offer.controller");
 
 router.post("/register/:userType", userController.createUser);
 router.get("/generate-otp/:mobile_no", userController.generateOtp);
@@ -29,4 +30,9 @@ router.get("/banners", bannerController.getBanners);
 router.get("/categories", categoryController.getCategoriesForUser);
 router.get("/category/:id", categoryController.getCategoryDetailForUser);
 router.get("/products", productController.getProductsForUser);
+
+// Offers
+router.get("/offers", offerController.getOffers);
+router.post("/offers/apply", offerController.applyOffer);
+router.post("/offers/remove", offerController.removeOffer);
 module.exports = router;

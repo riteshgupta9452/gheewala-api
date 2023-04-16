@@ -2,6 +2,7 @@ const User = require("../models/user");
 const Address = require("../models/user-address");
 const util = require("../functions/util");
 const Paginator = require("./../../util/paginator");
+const Cart = require("./../models/cart");
 
 module.exports.getUserTypes = async (req, res) => {
   const types = [
@@ -116,16 +117,20 @@ module.exports.verifyOtp = async (req, res) => {
 
   if (user.otp === req.params.otp && user.verified) {
     user.otp_verified = true;
-    user.save((err, user) => {
+    user.save(async (err, user) => {
       if (err) {
         return res.status(400).json({
           err: "NOT able to save user in DB",
         });
       }
+      const cart = await Cart.findOne({ user: req.userId, status: "pending" })
+        .populate("products.product address")
+        .lean();
       return res.json({
         message: "OTP verified successfully",
         success: true,
         token: util.generateJsonWebToken(user),
+        cart: cart ? cart : {},
       });
     });
   } else
