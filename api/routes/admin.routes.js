@@ -37,6 +37,7 @@ router.get("/toggle-verification/:user_id", userController.toggleVerification);
 router.post("/category", categoryController.createCategory);
 router.get("/categories", categoryController.getCategories);
 router.get("/category/:id", categoryController.toggleCategory);
+router.delete("/category/:id", categoryController.deleteCategory);
 
 // Orders
 router.get("/orders", orderController.getOrders);

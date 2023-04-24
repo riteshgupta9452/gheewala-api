@@ -3,6 +3,7 @@ const Address = require("../models/user-address");
 const util = require("../functions/util");
 const Paginator = require("./../../util/paginator");
 const Cart = require("./../models/cart");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.getUserTypes = async (req, res) => {
   const types = [
@@ -201,17 +202,18 @@ module.exports.addAddress = async (req, res) => {
       err: "User not found",
     });
   }
-  console.log("address", req.body);
-  console.log("new address", {
-    user_id: req.userId,
-    address: req.body.address,
-    title: req.params.title,
-  });
+
+  const userAddress = await Address.find({ User_id: ObjectId(req.userId) });
+  let isDefault = true;
+  if (userAddress.length > 0) {
+    isDefault = false;
+  }
 
   const address = new Address({
     user_id: req.userId,
     address: req.body.address,
     title: req.params.title,
+    is_default: isDefault,
   });
 
   address.save((err) => {
@@ -300,8 +302,9 @@ module.exports.setDefaultAddress = async (req, res) => {
       err: "User not found",
     });
   }
-
-  const address = await Address.findOne({ _id: req.params.address_id });
+  const address = await Address.findOne({
+    _id: ObjectId(req.params.address_id),
+  });
 
   if (!address) {
     return res.status(400).json({
@@ -349,6 +352,14 @@ module.exports.getAddress = async (req, res) => {
     });
   }
 
+  if (req.query.only_default) {
+    const userAddress = await Address.findOne({
+      user_id: req.userId,
+      is_viewable: true,
+      is_default: true,
+    });
+    return res.json({ data: userAddress, success: true });
+  }
   const userAddress = await Address.find({
     user_id: req.userId,
     is_viewable: true,

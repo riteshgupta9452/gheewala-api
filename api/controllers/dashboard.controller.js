@@ -387,6 +387,16 @@ module.exports.checkout = async (req, res) => {
     });
   }
 
+  const address = await Address.findOne({
+    _id: ObjectId(req.params.address_id),
+  });
+
+  if (!address) {
+    return res.status(400).json({
+      err: "Address not found",
+    });
+  }
+
   await Cart.updateOne(
     {
       user: req.userId,
@@ -395,7 +405,7 @@ module.exports.checkout = async (req, res) => {
     {
       $set: {
         status: "processing",
-        address: req.params.address_id,
+        address: address,
       },
     }
   );

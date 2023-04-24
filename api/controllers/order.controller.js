@@ -13,17 +13,6 @@ module.exports.getOrders = async (req, res) => {
       },
     },
     { $unwind: "$user" },
-    {
-      $lookup: {
-        from: "addresses",
-        localField: "address",
-        foreignField: "_id",
-        as: "address",
-      },
-    },
-    {
-      $unwind: "$address",
-    },
   ];
 
   const orders = (

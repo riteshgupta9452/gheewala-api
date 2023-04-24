@@ -38,6 +38,17 @@ const productSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    has_free_product: {
+      type: Boolean,
+      default: false,
+    },
+    free_product: {
+      label: String,
+      description: String,
+      subtext: String,
+      images: [String],
+      image: String,
+    },
   },
   {
     timestamps: true,

@@ -1,5 +1,6 @@
 const ProductCategory = require("./../models/product-category");
 const ObjectId = require("mongoose").Types.ObjectId;
+const Product = require("./../models/product");
 
 module.exports.getCategoriesForUser = async (req, res) => {
   const categories = await ProductCategory.find({ is_viewable: true });
@@ -7,7 +8,20 @@ module.exports.getCategoriesForUser = async (req, res) => {
 };
 
 module.exports.getCategories = async (req, res) => {
-  const categories = await ProductCategory.find({});
+  const categories = await ProductCategory.aggregate([
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "category",
+        as: "products",
+      },
+    },
+  ]);
+  for (let index = 0; index < categories.length; index++) {
+    categories[index].product_count = categories[index].products.length;
+    delete categories[index].products;
+  }
   res.json({ status: true, data: categories });
 };
 
@@ -45,4 +59,19 @@ module.exports.createCategory = async (req, res) => {
       .status(200)
       .json({ status: true, message: "Category successfully created" });
   });
+};
+
+module.exports.deleteCategory = async (req, res) => {
+  const products = await Product.findOne({ category: ObjectId(req.params.id) });
+  if (products) {
+    return res.status(400).json({
+      err: "Cannot delete category",
+    });
+  }
+  await ProductCategory.remove({
+    _id: ObjectId(req.params.id),
+  });
+  return res
+    .status(200)
+    .json({ status: true, message: "Category successfully deleted" });
 };

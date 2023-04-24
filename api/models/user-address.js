@@ -7,6 +7,8 @@ const addressSchema = new Schema(
       ref: "users",
     },
     address: {
+      name: { type: String, required: true },
+      mobile: { type: String, required: true },
       house_flat_no: { type: String, default: null },
       building_name: { type: String, default: null },
       street: { type: String, default: null },

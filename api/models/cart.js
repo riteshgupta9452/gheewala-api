@@ -8,8 +8,7 @@ const cartSchema = new Schema(
       required: true,
     },
     address: {
-      type: Schema.Types.ObjectId,
-      ref: "addresses",
+      type: Object,
     },
     products: [
       {
